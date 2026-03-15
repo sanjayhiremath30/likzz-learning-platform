@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
         if (existingUser) {
             return NextResponse.json(
-                { message: "User already exists" },
+                { message: "An account with this email already exists. Please login instead." },
                 { status: 409 }
             );
         }
@@ -36,12 +36,17 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json(
-            { message: "User registered successfully", user: { id: newUser.id, email: newUser.email, name: newUser.name } },
+            {
+                message: "User registered successfully",
+                user: { id: newUser.id, email: newUser.email, name: newUser.name }
+            },
             { status: 201 }
         );
-    } catch (error) {
+    } catch (error: any) {
+        console.error("❌ Registration error:", error);
+        // Return the actual Prisma/DB error message so we can debug it
         return NextResponse.json(
-            { message: "An error occurred during registration" },
+            { message: error?.message || "An error occurred during registration" },
             { status: 500 }
         );
     }

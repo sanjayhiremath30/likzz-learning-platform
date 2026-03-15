@@ -12,9 +12,8 @@ export async function GET(
             where: { id },
             include: {
                 instructor: {
-                    select: { name: true }
-                },
-                students: true
+                    select: { id: true, name: true }
+                }
             }
         });
 
@@ -24,6 +23,7 @@ export async function GET(
 
         return NextResponse.json(course);
     } catch (error) {
+        console.error("Course fetch error:", error);
         return NextResponse.json({ error: "Failed to fetch course" }, { status: 500 });
     }
 }

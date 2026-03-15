@@ -10,7 +10,8 @@ import {
     CheckCircle,
     ArrowRight,
     Trash2,
-    BookOpen
+    BookOpen,
+    AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -30,8 +31,8 @@ export default function CheckoutContent() {
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [enrolledCount, setEnrolledCount] = useState(0);
+    const [error, setError] = useState<string | null>(null);
 
     const planPrices: Record<string, number> = {
         basic: 9,
@@ -66,6 +67,8 @@ export default function CheckoutContent() {
                             }
                         }]);
                     }
+                    // ✅ always stop loading here
+                    setLoading(false);
                     return;
                 }
 
@@ -82,6 +85,8 @@ export default function CheckoutContent() {
                             instructor: { name: "Likzz Platform" }
                         }
                     }]);
+                    // ✅ always stop loading here
+                    setLoading(false);
                     return;
                 }
 
@@ -94,17 +99,15 @@ export default function CheckoutContent() {
             } catch (err) {
                 console.error(err);
             } finally {
-                setLoading(false);
+                // Only reached for regular cart flow (early returns above handle direct/plan)
+                if (!directCourseId && !plan) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchCart();
     }, [status, router, plan, directCourseId]);
-
-    // Separate setLoading for direct/plan flows where we return early
-    useEffect(() => {
-        if (directCourseId || plan) setLoading(false);
-    }, [directCourseId, plan]);
 
     const removeFromCart = async (courseId: string) => {
         if (courseId.startsWith("plan-") || courseId.startsWith("direct-")) return;
@@ -122,16 +125,16 @@ export default function CheckoutContent() {
     const handleCheckout = async () => {
         setIsProcessing(true);
         try {
-            // Collect real course IDs (skip plan items)
+            // Collect real course IDs (skip plan-type items)
             const courseIds = cartItems
                 .map(item => item.courseId)
                 .filter(id => !id.startsWith("plan-") && !id.startsWith("direct-"));
 
-            // Also include direct buy course
+            // Also include direct-buy course
             if (directCourseId) courseIds.push(directCourseId);
 
-            // Enroll user in purchased courses
             if (courseIds.length > 0) {
+                // Enroll user in purchased courses (this also clears cart in DB)
                 const enrollRes = await fetch("/api/enroll", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -140,19 +143,42 @@ export default function CheckoutContent() {
                 if (enrollRes.ok) {
                     const data = await enrollRes.json();
                     setEnrolledCount(data.enrolled || courseIds.length);
+                } else {
+                    let errData;
+                    try {
+                        errData = await enrollRes.json();
+                    } catch (e) {
+                        errData = { error: await enrollRes.text() };
+                    }
+                    console.error(`❌ Enrollment failed (${enrollRes.status}):`, JSON.stringify(errData));
+                    setError(errData.error || "Enrollment failed. Your session might be invalid.");
+                    setIsProcessing(false);
+                    return; // Stop here
                 }
+            } else {
+                // Plan purchase — no course enrollment, just count cart items
+                setEnrolledCount(cartItems.length);
+                // Clear cart from DB for plan purchases
+                const clearRes = await fetch("/api/cart", { method: "DELETE" });
+                if (!clearRes.ok) console.error("❌ Failed to clear cart:", await clearRes.text());
             }
 
-            // Clear cart in context
+            // Refresh cart count in navbar
             await refreshCart();
-            setPaymentSuccess(true);
+            
+            // ✅ Redirect to dedicated success page
+            router.push(`/checkout/success?enrolled=${enrolledCount || courseIds.length || cartItems.length || 1}&total=${total}`);
 
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            console.error("❌ Checkout system error:", err);
+            setError(err?.message || "An unexpected error occurred during checkout.");
         } finally {
             setIsProcessing(false);
         }
     };
+
+
+
 
     const total = cartItems.reduce((acc, item) => acc + (item.course?.price || 0), 0);
 
@@ -165,73 +191,42 @@ export default function CheckoutContent() {
         );
     }
 
-    // ✅ Payment Success Screen
-    if (paymentSuccess) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 px-4">
-                <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-[3rem] shadow-2xl p-16 max-w-lg w-full text-center"
-                >
-                    <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                        className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8"
-                    >
-                        <CheckCircle size={52} className="text-green-600" />
-                    </motion.div>
-
-                    <h1 className="text-4xl font-black mb-3 tracking-tight text-gray-900">
-                        Payment Successful! 🎉
-                    </h1>
-
-                    <p className="text-gray-500 text-lg font-medium mb-2">
-                        ₹{total.toFixed(2)} paid securely
-                    </p>
-
-                    {enrolledCount > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="mt-6 mb-10 bg-blue-50 border border-blue-100 rounded-2xl p-6"
-                        >
-                            <div className="flex items-center justify-center gap-3 mb-2">
-                                <BookOpen className="text-blue-600" size={24} />
-                                <p className="font-black text-blue-700 text-lg">
-                                    {enrolledCount} Course{enrolledCount > 1 ? "s" : ""} Enrolled!
-                                </p>
-                            </div>
-                            <p className="text-blue-600 text-sm font-medium">
-                                Your courses are now available in your dashboard.
-                            </p>
-                        </motion.div>
-                    )}
-
-                    <div className="flex flex-col gap-3">
-                        <Link
-                            href="/dashboard"
-                            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-600/20 active:scale-95"
-                        >
-                            Go to My Courses <ArrowRight size={18} />
-                        </Link>
-                        <Link
-                            href="/courses"
-                            className="w-full border-2 border-gray-100 text-gray-700 py-4 rounded-2xl font-black hover:border-blue-300 transition-all"
-                        >
-                            Browse More Courses
-                        </Link>
-                    </div>
-                </motion.div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-gray-50 pt-32 pb-20">
-            <div className="max-w-6xl mx-auto px-4">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Error Banner */}
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8 p-6 bg-red-50 border-2 border-red-100 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-4"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-red-100 rounded-2xl text-red-600">
+                                <AlertCircle size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-red-900 font-black">Checkout Encountered a Problem</h3>
+                                <p className="text-red-700 text-sm font-medium">{error}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setError(null)}
+                                className="px-6 py-3 bg-white border border-red-200 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-all"
+                            >
+                                Dismiss
+                            </button>
+                            <button 
+                                onClick={() => window.location.href = '/api/auth/signout'}
+                                className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+                            >
+                                Log Out & Restart
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
 
                 <h1 className="text-5xl font-black mb-2 tracking-tight">Order Summary 🛍️</h1>
                 <p className="text-gray-500 font-medium mb-12">Review your items and complete your purchase.</p>
@@ -347,7 +342,7 @@ export default function CheckoutContent() {
 
                             <button
                                 onClick={handleCheckout}
-                                disabled={total === 0 || isProcessing || cartItems.length === 0}
+                                disabled={isProcessing || cartItems.length === 0}
                                 className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg hover:bg-blue-700 active:scale-95 transition-all shadow-xl shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {isProcessing ? (
@@ -357,7 +352,7 @@ export default function CheckoutContent() {
                                     </>
                                 ) : (
                                     <>
-                                        Pay ₹{total.toFixed(2)} <ArrowRight size={20} />
+                                        {total > 0 ? `Pay ₹${total.toFixed(2)}` : "Enroll for Free"} <ArrowRight size={20} />
                                     </>
                                 )}
                             </button>

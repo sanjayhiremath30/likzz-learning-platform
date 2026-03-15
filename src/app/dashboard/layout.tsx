@@ -11,7 +11,8 @@ import {
     Award,
     LogOut,
     BrainCircuit,
-    Bell
+    Bell,
+    GraduationCap
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import clsx from "clsx";
@@ -41,6 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const sidebarLinks = [
         { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
         { name: "My Courses", href: "/dashboard/courses", icon: BookOpen },
+        { name: "Enrolled Courses", href: "/dashboard/enrolled", icon: GraduationCap },
         { name: "Certificates", href: "/dashboard/certificates", icon: Award },
         { name: "Settings", href: "/dashboard/settings", icon: Settings },
     ];

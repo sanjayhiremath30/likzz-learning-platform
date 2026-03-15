@@ -13,6 +13,18 @@ export async function POST(request: Request) {
     const userId = (session.user as any).id;
     const { courseIds } = await request.json(); // array of course IDs
 
+    console.log("🚀 Enrollment attempt:", { userId, courseIds });
+
+    if (!userId) {
+        return NextResponse.json({ error: "User ID missing from session" }, { status: 400 });
+    }
+
+    // Check if user actually exists in DB
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+        return NextResponse.json({ error: "User not found in database. Please log out and log in again." }, { status: 401 });
+    }
+
     if (!courseIds || !Array.isArray(courseIds) || courseIds.length === 0) {
         return NextResponse.json({ error: "courseIds array required" }, { status: 400 });
     }
@@ -20,6 +32,7 @@ export async function POST(request: Request) {
     try {
         const enrollments = [];
         for (const courseId of courseIds) {
+            console.log(`Processing enrollment for course: ${courseId}`);
             const enrollment = await prisma.enrollment.upsert({
                 where: { userId_courseId: { userId, courseId } },
                 update: {},  // already enrolled — no-op
@@ -30,10 +43,11 @@ export async function POST(request: Request) {
 
         // Clear the user's cart after enrollment
         await prisma.cartItem.deleteMany({ where: { userId } });
+        console.log("✅ Enrollment successful, cart cleared.");
 
         return NextResponse.json({ success: true, enrolled: enrollments.length });
     } catch (error) {
-        console.error("Enroll error:", error);
+        console.error("❌ Enroll error:", error);
         return NextResponse.json({ error: "Failed to enroll", details: String(error) }, { status: 500 });
     }
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ShoppingCart, Star, Clock, Play, Youtube, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
 
 export default function CourseCard({ course }: any) {
     const [imgSrc, setImgSrc] = useState(
@@ -11,6 +12,7 @@ export default function CourseCard({ course }: any) {
     const [cartAdded, setCartAdded] = useState(false);
     const [cartLoading, setCartLoading] = useState(false);
     const [showPlayer, setShowPlayer] = useState(false);
+    const { refreshCart } = useCart();
 
     // Extract YouTube video ID
     const getYouTubeId = (url: string) => {
@@ -34,6 +36,7 @@ export default function CourseCard({ course }: any) {
             });
             if (res.ok) {
                 setCartAdded(true);
+                await refreshCart(); // ✅ Update navbar cart count
                 setTimeout(() => setCartAdded(false), 3000);
             } else if (res.status === 401) {
                 window.location.href = "/login?callbackUrl=/courses";

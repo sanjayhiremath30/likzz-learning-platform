@@ -1,75 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
-export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const featured = searchParams.get("featured");
-    const category = searchParams.get("category");
+export async function GET() {
 
     try {
-        const where: any = {};
-        if (featured === "true") where.rating = { gte: 4.5 };
-        if (category) where.category = category;
 
-        const count = await prisma.course.count();
-        const courses = await prisma.course.findMany({
-            where,
-            include: {
-                instructor: {
-                    select: { name: true }
-                }
-            },
-            orderBy: {
-                createdAt: "desc"
-            }
-        });
+        const courses = await prisma.course.findMany();
 
-        // Debug info
-        const dbUrl = process.env.DATABASE_URL || "";
-        const maskedUrl = dbUrl.length > 20 
-            ? `${dbUrl.substring(0, 10)}...${dbUrl.substring(dbUrl.length - 10)}` 
-            : "NOT_CONFIGURED";
-
-        const responseData = {
-            courses: courses.length > 0 ? courses : [],
-            count: count,
-            debug: {
-                found: courses.length,
-                total: count,
-                dbStatus: dbUrl ? 'Configured' : 'Missing',
-                maskedUrl,
-                version: '3.0-Resilient',
-                timestamp: new Date().toISOString()
-            }
-        };
-
-        return NextResponse.json(responseData, {
-            headers: {
-                'X-API-Version': '3.0-Resilient',
-                'Cache-Control': 'no-store, max-age=0, must-revalidate',
-            }
-        });
+        return NextResponse.json(courses);
 
     } catch (error) {
-        console.error("COURSES API ERROR:", error);
-        
-        const isNeonError = String(error).includes("neon.tech") || String(error).includes("pooler");
 
-        // Return a structured error with fallback data to prevent total failure
-        return NextResponse.json(
-            { 
-                courses: [],
-                error: "Database Connectivity Issue", 
-                details: error instanceof Error ? error.message : String(error),
-                dbStatus: process.env.DATABASE_URL ? 'Configured' : 'Missing',
-                version: '3.1-Neon-Aware',
-                hint: isNeonError 
-                    ? "Ensure both DATABASE_URL (pooled) and DIRECT_URL (direct) are set in Vercel for Neon databases. Append ?pgbouncer=true to DATABASE_URL if using port 5432."
-                    : "Standard database connection failure. Check environment variables."
-            },
-            { status: 500 }
-        );
+        console.error(error);
+
+        return NextResponse.json([]);
+
     }
+
 }

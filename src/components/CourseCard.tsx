@@ -1,22 +1,14 @@
 "use client";
 
-interface Course {
-    id: string;
-    title: string;
-    category: string;
-    price: number;
-    image?: string;
-}
+export default function CourseCard({ course }: any) {
 
-export default function CourseCard({ course }: { course: Course }) {
     return (
         <div className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
 
-            {/* Course Image */}
             <img
                 src={course.image || "https://via.placeholder.com/400x200"}
                 alt={course.title}
-                className="w-full h-40 object-cover"
+                className="w-full h-44 object-cover"
             />
 
             <div className="p-4">
@@ -35,15 +27,14 @@ export default function CourseCard({ course }: { course: Course }) {
                         ₹{course.price}
                     </span>
 
-                    <button
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                    >
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                         Buy Course
                     </button>
 
                 </div>
 
             </div>
+
         </div>
     );
 }

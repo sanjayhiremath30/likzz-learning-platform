@@ -55,6 +55,8 @@ export async function GET(request: Request) {
     } catch (error) {
         console.error("COURSES API ERROR:", error);
         
+        const isNeonError = String(error).includes("neon.tech") || String(error).includes("pooler");
+
         // Return a structured error with fallback data to prevent total failure
         return NextResponse.json(
             { 
@@ -62,7 +64,10 @@ export async function GET(request: Request) {
                 error: "Database Connectivity Issue", 
                 details: error instanceof Error ? error.message : String(error),
                 dbStatus: process.env.DATABASE_URL ? 'Configured' : 'Missing',
-                version: '3.0-Error-Mode'
+                version: '3.1-Neon-Aware',
+                hint: isNeonError 
+                    ? "Ensure both DATABASE_URL (pooled) and DIRECT_URL (direct) are set in Vercel for Neon databases. Append ?pgbouncer=true to DATABASE_URL if using port 5432."
+                    : "Standard database connection failure. Check environment variables."
             },
             { status: 500 }
         );

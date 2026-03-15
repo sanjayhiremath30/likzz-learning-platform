@@ -1,0 +1,22 @@
+﻿--- DB DIAGNOSTICS ---
+User count: 1
+- Dr. Angela Steele (INSTRUCTOR, instructor@likzz.com)
+Total Course count (any): 37
+YouTube Course count: 7
+Found Instructor: Dr. Angela Steele
+First Course Data: {
+  "id": "cmms4tu32001atrtwaup3fc6e",
+  "title": "Design Advanced Module 13",
+  "description": "Deep dive into advanced topics of Design. Master the skills that matter with Likzz Academy.",
+  "price": 90.18,
+  "instructorId": "cmms4tpsx0000trtwy2johvh5",
+  "thumbnail": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+  "previewVideo": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "duration": "13h 1m",
+  "rating": 4.992682906638541,
+  "reviews": 4397,
+  "category": "Design",
+  "isYoutubeCourse": false,
+  "createdAt": "2026-03-15T19:13:04.910Z",
+  "updatedAt": "2026-03-15T19:13:04.910Z"
+}

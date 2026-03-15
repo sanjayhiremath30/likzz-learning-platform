@@ -12,36 +12,29 @@ export async function GET() {
     const userId = (session.user as any).id;
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
+        const enrollments = await prisma.enrollment.findMany({
+            where: { userId },
             include: {
-                enrollments: {
-                    include: {
-                        course: {
-                            include: { instructor: { select: { name: true } } }
-                        }
-                    }
-                },
-                certificates: true
+                course: {
+                    include: { instructor: { select: { name: true } } }
+                }
             }
         });
 
-        if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
-        }
-
         return NextResponse.json({
-            enrolledCourses: user.enrollments.length,
-            certificates: user.certificates.length,
-            hoursLearned: user.learningHours.toFixed(1),
-            streak: user.streak,
-            activeCourses: user.enrollments.map(e => ({
+            enrolledCourses: enrollments.length,
+            certificates: 0,
+            hoursLearned: "0.0",
+            streak: 0,
+            activeCourses: enrollments.map(e => ({
                 ...e.course,
-                progress: e.progress
+                thumbnail: e.course.image,
+                progress: e.progress,
+                instructor: e.course.instructor || { name: "Likzz Instructor" }
             }))
         });
     } catch (error) {
-        console.error(error);
+        console.error("Stats error:", error);
         return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
     }
 }

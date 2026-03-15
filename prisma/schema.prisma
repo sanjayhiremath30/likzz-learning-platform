@@ -9,17 +9,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  role      String   @default("STUDENT")
-
-  courses   Course[]
-  createdAt DateTime @default(now())
+  id          String       @id @default(cuid())
+  name        String?
+  email       String       @unique
+  role        String       @default("STUDENT")
+  courses     Course[]
+  enrollments Enrollment[]
+  cartItems   CartItem[]
+  createdAt   DateTime     @default(now())
 }
 
 model Course {
-  id              String   @id @default(cuid())
+  id              String       @id @default(cuid())
   title           String
   description     String?
   category        String
@@ -27,12 +28,35 @@ model Course {
   image           String?
   duration        String?
   previewVideo    String?
-  isYoutubeCourse Boolean  @default(false)
-  rating          Float    @default(4.5)
-  reviews         Int      @default(0)
+  isYoutubeCourse Boolean      @default(false)
+  rating          Float        @default(4.5)
+  reviews         Int          @default(0)
+  instructorId    String?
+  instructor      User?        @relation(fields: [instructorId], references: [id])
+  enrollments     Enrollment[]
+  cartItems       CartItem[]
+  createdAt       DateTime     @default(now())
+}
 
-  instructorId String?
-  instructor   User?    @relation(fields: [instructorId], references: [id])
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  progress  Float    @default(0.0)
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
 
-  createdAt    DateTime @default(now())
+  @@unique([userId, courseId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
 }

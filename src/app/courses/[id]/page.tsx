@@ -108,6 +108,16 @@ export default function CourseDetails({ params }: { params: Promise<{ id: string
     }
 
 
+    const getYoutubeId = (url: string) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
+    const videoId = course?.isYoutubeCourse || course?.previewVideo?.includes("youtube.com") || course?.previewVideo?.includes("youtu.be")
+        ? getYoutubeId(course.previewVideo)
+        : null;
 
     return (
         <div className="min-h-screen bg-[var(--background)] pb-20">
@@ -127,7 +137,7 @@ export default function CourseDetails({ params }: { params: Promise<{ id: string
                         >
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8">
                                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-                                {course.category} Certification
+                                {course.isYoutubeCourse && "YouTube "} {course.category} Certification
                             </div>
                             <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[1.05] tracking-tighter">{course.title}</h1>
                             <p className="text-gray-400 text-xl mb-12 leading-relaxed max-w-2xl font-medium">{course.description}</p>
@@ -155,19 +165,28 @@ export default function CourseDetails({ params }: { params: Promise<{ id: string
                             className="bg-[var(--card)] text-[var(--foreground)] rounded-[3rem] overflow-hidden border border-[var(--border)] shadow-2xl relative group"
                         >
                             <div className="aspect-video bg-gray-900 group cursor-pointer relative overflow-hidden">
-                                <video
-                                    src={course.previewVideo || "https://media.w3.org/2010/05/sintel/trailer_hd.mp4"}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                                    controls
-                                    poster={imgSrc}
-                                    onError={(e: any) => {
-                                        e.target.src = "https://media.w3.org/2010/05/sintel/trailer_hd.mp4";
-                                    }}
-                                />
+                                {videoId ? (
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/${videoId}`}
+                                        className="w-full h-full"
+                                        allowFullScreen
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    />
+                                ) : (
+                                    <video
+                                        src={course.previewVideo || "https://media.w3.org/2010/05/sintel/trailer_hd.mp4"}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                                        controls
+                                        poster={imgSrc}
+                                        onError={(e: any) => {
+                                            e.target.src = "https://media.w3.org/2010/05/sintel/trailer_hd.mp4";
+                                        }}
+                                    />
+                                )}
                             </div>
                             <div className="p-10">
                                 <div className="flex items-center gap-4 mb-8">
-                                    <span className="text-5xl font-black tracking-tighter">${course.price}</span>
+                                    <span className={`text-5xl font-black tracking-tighter ${course.isYoutubeCourse ? "text-blue-600" : ""}`}>${course.price}</span>
                                     {course.price > 0 && (
                                         <div className="flex items-end gap-2 h-10">
                                             <span className="text-[var(--muted-foreground)] line-through text-lg mb-1 font-bold">${(course.price * 1.5).toFixed(2)}</span>
@@ -182,15 +201,17 @@ export default function CourseDetails({ params }: { params: Promise<{ id: string
                                         disabled={addingToCart}
                                         className="bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-blue-600/25 active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-xs flex items-center justify-center gap-2"
                                     >
-                                        {addingToCart ? <Loader2 className="animate-spin" size={18} /> : <>Enroll Now <ChevronRight size={18} /></>}
+                                        {addingToCart ? <Loader2 className="animate-spin" size={18} /> : <>{course.isYoutubeCourse ? "Start Course" : "Enroll Now"} <ChevronRight size={18} /></>}
                                     </button>
-                                    <button
-                                        onClick={() => addToCart(false)}
-                                        disabled={addingToCart}
-                                        className="bg-[var(--muted)] hover:bg-[var(--border)] text-[var(--foreground)] font-black py-5 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-xs border border-[var(--border)]"
-                                    >
-                                        Add to cart
-                                    </button>
+                                    {!course.isYoutubeCourse && (
+                                        <button
+                                            onClick={() => addToCart(false)}
+                                            disabled={addingToCart}
+                                            className="bg-[var(--muted)] hover:bg-[var(--border)] text-[var(--foreground)] font-black py-5 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-xs border border-[var(--border)]"
+                                        >
+                                            Add to cart
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4">

@@ -18,6 +18,7 @@ interface CourseCardProps {
         previewVideo: string;
         duration: string;
         category: string;
+        isYoutubeCourse?: boolean;
     };
 }
 
@@ -29,22 +30,35 @@ export default function CourseCard({ course }: CourseCardProps) {
     const [isVideoPlaying, setIsVideoPlaying] = useState(false);
     const { refreshCart } = useCart();
 
+    const getYoutubeId = (url: string) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
+    const videoId = course.isYoutubeCourse || course.previewVideo?.includes("youtube.com") || course.previewVideo?.includes("youtu.be")
+        ? getYoutubeId(course.previewVideo)
+        : null;
+
     useEffect(() => {
         let timer: NodeJS.Timeout;
-        if (isHovered && videoRef.current && !videoError) {
-            videoRef.current.play().catch(() => setVideoError(true));
-            timer = setTimeout(() => {
-                if (videoRef.current) {
-                    videoRef.current.pause();
-                    videoRef.current.currentTime = 0;
-                }
-            }, 8000); // 8 second preview
+        if (isHovered && !videoId) {
+            if (videoRef.current && !videoError) {
+                videoRef.current.play().catch(() => setVideoError(true));
+                timer = setTimeout(() => {
+                    if (videoRef.current) {
+                        videoRef.current.pause();
+                        videoRef.current.currentTime = 0;
+                    }
+                }, 8000);
+            }
         } else if (!isHovered && videoRef.current) {
             videoRef.current.pause();
             videoRef.current.currentTime = 0;
         }
         return () => clearTimeout(timer);
-    }, [isHovered, videoError]);
+    }, [isHovered, videoError, videoId]);
 
     const addToCart = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -61,7 +75,6 @@ export default function CourseCard({ course }: CourseCardProps) {
 
             if (res.ok) {
                 await refreshCart();
-                // We could add a toast here, but for now simple success state is good
             } else {
                 const data = await res.json();
                 if (data.error === "Unauthorized") {
@@ -91,21 +104,29 @@ export default function CourseCard({ course }: CourseCardProps) {
                     src={imgSrc}
                     alt={course.title}
                     onError={() => setImgSrc(`https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80`)}
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${isVideoPlaying ? 'opacity-0' : 'opacity-100'}`}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${isHovered && videoId ? 'opacity-0' : 'opacity-100'}`}
                 />
 
-                {isHovered && !videoError && (
+                {isHovered && !videoId && !videoError && (
                     <video
                         ref={videoRef}
                         src={course.previewVideo}
                         muted
                         playsInline
-                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isVideoPlaying ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`}
-                        onError={() => {
-                            setVideoError(true);
-                            setIsVideoPlaying(false);
-                        }}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isHovered ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`}
+                        onError={() => setVideoError(true)}
                     />
+                )}
+
+                {isHovered && videoId && (
+                    <div className="absolute inset-0 w-full h-full">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}`}
+                            className="w-full h-full pointer-events-none"
+                            allow="autoplay; encrypted-media"
+                            allowFullScreen
+                        />
+                    </div>
                 )}
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -115,6 +136,14 @@ export default function CourseCard({ course }: CourseCardProps) {
                         {course.category}
                     </span>
                 </div>
+
+                {course.isYoutubeCourse && (
+                    <div className="absolute top-4 right-4">
+                        <span className="px-4 py-1.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-red-500/50">
+                            YouTube Course
+                        </span>
+                    </div>
+                )}
 
                 <AnimatePresence>
                     {isHovered && (
@@ -152,23 +181,33 @@ export default function CourseCard({ course }: CourseCardProps) {
                 <div className="flex items-center justify-between mt-auto pt-6 border-t border-[var(--border)]">
                     <div className="flex flex-col">
                         <span className="text-[10px] font-black text-[var(--muted-foreground)] uppercase tracking-[0.2em] mb-1">Pricing</span>
-                        <span className="text-2xl font-black tracking-tighter">${course.price}</span>
+                        <span className={`text-2xl font-black tracking-tighter ${course.isYoutubeCourse ? "text-blue-600" : ""}`}>${course.price}</span>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={addToCart}
-                            disabled={isAdding}
-                            className={`p-4 rounded-2xl transition-all shadow-xl active:scale-90 flex items-center justify-center ${isAdding
-                                ? "bg-[var(--muted)] text-[var(--muted-foreground)]"
-                                : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20"
-                                }`}
-                        >
-                            {isAdding ? <Loader2 className="animate-spin" size={20} /> : <ShoppingCart size={20} />}
-                        </button>
+                        {course.isYoutubeCourse ? (
+                            <Link
+                                href={`/courses/${course.id}`}
+                                className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 active:scale-95"
+                            >
+                                Watch Course
+                            </Link>
+                        ) : (
+                            <button
+                                onClick={addToCart}
+                                disabled={isAdding}
+                                className={`p-4 rounded-2xl transition-all shadow-xl active:scale-90 flex items-center justify-center ${isAdding
+                                    ? "bg-[var(--muted)] text-[var(--muted-foreground)]"
+                                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20"
+                                    }`}
+                            >
+                                {isAdding ? <Loader2 className="animate-spin" size={20} /> : <ShoppingCart size={20} />}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
         </motion.div>
     );
 }
+

@@ -69,6 +69,10 @@ export default function Navbar() {
                         Courses
                     </Link>
 
+                    <Link href="/youtube-courses" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                        YouTube Courses
+                    </Link>
+
                     {/* FIXED LINKS */}
                     <Link href="/pricing" className="text-sm font-medium hover:text-blue-600 transition-colors">
                         Pricing
@@ -169,6 +173,7 @@ export default function Navbar() {
                         <div className="p-4 space-y-4">
                             <Link href="/" className="block text-lg font-bold">Home</Link>
                             <Link href="/courses" className="block text-lg font-bold">Courses</Link>
+                            <Link href="/youtube-courses" className="block text-lg font-bold">YouTube Courses</Link>
 
                             {/* FIXED MOBILE LINKS */}
                             <Link href="/pricing" className="block text-lg font-bold">Pricing</Link>

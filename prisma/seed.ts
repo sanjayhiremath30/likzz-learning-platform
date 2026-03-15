@@ -160,7 +160,46 @@ async function main() {
         })
     }
 
-    for (const course of coursesData) {
+    const youtubeCoursesData = [
+        {
+            title: "Next.js 15 Full Course for Beginners",
+            description: "Master the latest Next.js 15 features including App Router, Server Actions, and more in this comprehensive YouTube masterclass.",
+            price: 9.00,
+            category: "Development",
+            thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=1200",
+            previewVideo: "https://www.youtube.com/watch?v=wm5gMKuwSYk",
+            duration: "12h 45m",
+            rating: 4.9,
+            reviews: 15400,
+            isYoutubeCourse: true,
+        },
+        {
+            title: "Advanced TypeScript Patterns for Pros",
+            description: "Learn high-level TypeScript patterns used in industry-scale applications. Perfect for intermediate developers.",
+            price: 19.00,
+            category: "Development",
+            thumbnail: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?auto=format&fit=crop&w=1200",
+            previewVideo: "https://www.youtube.com/watch?v=h8L0IsLpHe8",
+            duration: "8h 15m",
+            rating: 4.8,
+            reviews: 4200,
+            isYoutubeCourse: true,
+        },
+        {
+            title: "UI/UX Design Masterclass with Figma",
+            description: "The most comprehensive YouTube course on UI/UX design. Learn professional design systems and handoff.",
+            price: 29.00,
+            category: "Design",
+            thumbnail: "https://images.unsplash.com/photo-1586717791821-3f44a563dc4c?auto=format&fit=crop&w=1200",
+            previewVideo: "https://www.youtube.com/watch?v=c9Wg6ndoxag",
+            duration: "15h 30m",
+            rating: 4.7,
+            reviews: 8900,
+            isYoutubeCourse: true,
+        }
+    ]
+
+    for (const course of [...coursesData, ...youtubeCoursesData]) {
         await prisma.course.create({
             data: {
                 ...course,
@@ -169,7 +208,7 @@ async function main() {
         })
     }
 
-    console.log('Seed successful: 30 courses added.')
+    console.log('Seed successful: 33 courses added.')
 }
 
 main()

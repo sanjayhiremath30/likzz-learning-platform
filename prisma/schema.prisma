@@ -39,6 +39,7 @@ model Course {
   students      Enrollment[]
   cartItems     CartItem[]
   certificates  Certificate[]
+  isYoutubeCourse Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }

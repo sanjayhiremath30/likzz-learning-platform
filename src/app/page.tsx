@@ -25,17 +25,23 @@ export default function Home() {
   const { data: session, status } = useSession();
   const [categories, setCategories] = useState<any[]>([]);
   const [featuredCourses, setFeaturedCourses] = useState<any[]>([]);
+  const [youtubeCourses, setYoutubeCourses] = useState<any[]>([]);
   const [isLoadingMain, setIsLoadingMain] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [catRes, courseRes] = await Promise.all([
+        const [catRes, courseRes, youtubeRes] = await Promise.all([
           fetch("/api/categories"),
-          fetch("/api/courses?featured=true")
+          fetch("/api/courses?featured=true"),
+          fetch("/api/youtube-courses")
         ]);
         if (catRes.ok) setCategories(await catRes.json());
         if (courseRes.ok) setFeaturedCourses(await courseRes.json());
+        if (youtubeRes.ok) {
+          const ytData = await youtubeRes.json();
+          setYoutubeCourses(ytData.slice(0, 4));
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -245,6 +251,32 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* YouTube Section */}
+        {youtubeCourses.length > 0 && (
+          <section className="py-24 bg-[#0f172a] text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest mb-4 border border-red-500/30">
+                    <MonitorPlay size={14} /> New Masterclasses
+                  </div>
+                  <h2 className="text-4xl font-extrabold mb-4 tracking-tight">YouTube Masterclasses</h2>
+                  <p className="text-lg text-gray-400 font-medium font-medium">Stream high-quality learning directly on LIKZZ.</p>
+                </div>
+                <Link href="/youtube-courses" className="text-blue-400 font-black flex items-center gap-2 hover:gap-4 transition-all uppercase tracking-widest text-sm">
+                  View All Streams <ChevronRight size={20} />
+                </Link>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {youtubeCourses.map(course => (
+                  <CourseCard key={course.id} course={course} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Mentors Banner */}
         <section className="py-24">

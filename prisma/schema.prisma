@@ -19,14 +19,17 @@ model User {
 }
 
 model Course {
-  id           String   @id @default(cuid())
-  title        String
-  description  String?
-  category     String
-  price        Float
-  image        String?
-  duration     String?
-  previewVideo String?
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  category        String
+  price           Float
+  image           String?
+  duration        String?
+  previewVideo    String?
+  isYoutubeCourse Boolean  @default(false)
+  rating          Float    @default(4.5)
+  reviews         Int      @default(0)
 
   instructorId String?
   instructor   User?    @relation(fields: [instructorId], references: [id])

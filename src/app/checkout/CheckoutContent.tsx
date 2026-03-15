@@ -19,6 +19,7 @@ export default function CheckoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const plan = searchParams.get("plan");
+    const directCourseId = searchParams.get("courseId");
 
     const { refreshCart } = useCart();
 
@@ -36,6 +37,24 @@ export default function CheckoutContent() {
 
         const fetchCart = async () => {
             try {
+
+                // If "Buy Now" was clicked directly on a course, fetch that course
+                if (directCourseId) {
+                    const courseRes = await fetch(`/api/courses/${directCourseId}`);
+                    if (courseRes.ok) {
+                        const course = await courseRes.json();
+                        setCartItems([{
+                            id: "direct-" + course.id,
+                            courseId: course.id,
+                            course: {
+                                ...course,
+                                thumbnail: course.image,
+                                instructor: course.instructor || { name: "Likzz Instructor" }
+                            }
+                        }]);
+                        return;
+                    }
+                }
 
                 const res = await fetch("/api/cart");
 
@@ -87,11 +106,12 @@ export default function CheckoutContent() {
 
         } else if (status === "unauthenticated") {
 
-            router.push("/login?callbackUrl=/checkout");
+            router.push(`/login?callbackUrl=/checkout${directCourseId ? `?courseId=${directCourseId}` : ""}`);
 
         }
 
-    }, [status, router, plan]);
+    }, [status, router, plan, directCourseId]);
+
 
     const removeFromCart = async (courseId: string) => {
 

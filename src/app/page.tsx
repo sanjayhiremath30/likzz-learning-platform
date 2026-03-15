@@ -36,14 +36,27 @@ export default function Home() {
           fetch("/api/courses?featured=true"),
           fetch("/api/youtube-courses")
         ]);
-        if (catRes.ok) setCategories(await catRes.json());
-        if (courseRes.ok) setFeaturedCourses(await courseRes.json());
+        
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          setCategories(Array.isArray(catData) ? catData : []);
+        }
+        
+        if (courseRes.ok) {
+          const courseData = await courseRes.json();
+          setFeaturedCourses(Array.isArray(courseData) ? courseData : []);
+        }
+        
         if (youtubeRes.ok) {
           const ytData = await youtubeRes.json();
-          setYoutubeCourses(ytData.slice(0, 4));
+          if (Array.isArray(ytData)) {
+            setYoutubeCourses(ytData.slice(0, 4));
+          } else {
+            setYoutubeCourses([]);
+          }
         }
       } catch (err) {
-        console.error(err);
+        console.error("Home page fetch error:", err);
       } finally {
         setIsLoadingMain(false);
       }

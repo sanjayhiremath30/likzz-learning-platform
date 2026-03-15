@@ -9,17 +9,31 @@ import { motion } from "framer-motion";
 export default function YoutubeCoursesPage() {
     const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [dbInfo, setDbInfo] = useState<{count: string, status: string} | null>(null);
 
     useEffect(() => {
         const fetchYoutubeCourses = async () => {
             try {
-                const res = await fetch("/api/youtube-courses");
+                const res = await fetch(`/api/youtube-courses?t=${Date.now()}`);
+                
+                const count = res.headers.get('X-DB-Count');
+                if (count) setDbInfo({ count, status: 'Active' });
+
                 if (res.ok) {
                     const data = await res.json();
-                    setCourses(data);
+                    if (Array.isArray(data)) {
+                        setCourses(data);
+                    } else {
+                        console.error("YouTube API did not return an array:", data);
+                        setCourses([]);
+                    }
+                } else {
+                    console.error("Failed to fetch YouTube courses:", res.status);
+                    setCourses([]);
                 }
             } catch (err) {
                 console.error("Failed to fetch YouTube courses:", err);
+                setCourses([]);
             } finally {
                 setLoading(false);
             }

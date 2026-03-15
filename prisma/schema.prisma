@@ -14,10 +14,7 @@ model User {
   email String  @unique
   role  String  @default("STUDENT")
 
-  courses     Course[]     @relation("InstructorCourses")
-  enrollments Enrollment[]
-  cartItems   CartItem[]
-
+  courses   Course[]
   createdAt DateTime @default(now())
 }
 
@@ -31,46 +28,7 @@ model Course {
   duration    String?
 
   instructorId String?
-  instructor   User?   @relation("InstructorCourses", fields: [instructorId], references: [id])
-
-  enrollments  Enrollment[]
-  cartItems    CartItem[]
-  certificates Certificate[]
-
-  createdAt DateTime @default(now())
-}
-
-model Enrollment {
-  id String @id @default(cuid())
-
-  userId   String
-  courseId String
-
-  user   User   @relation(fields: [userId], references: [id])
-  course Course @relation(fields: [courseId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model CartItem {
-  id String @id @default(cuid())
-
-  userId   String
-  courseId String
-
-  user   User   @relation(fields: [userId], references: [id])
-  course Course @relation(fields: [courseId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model Certificate {
-  id String @id @default(cuid())
-
-  userId   String
-  courseId String
-
-  course Course @relation(fields: [courseId], references: [id])
+  instructor   User?   @relation(fields: [instructorId], references: [id])
 
   createdAt DateTime @default(now())
 }

@@ -2,59 +2,126 @@
 
 import { useEffect, useState } from "react";
 
+type Course = {
+    id: string;
+    title: string;
+    category: string;
+    price: number;
+};
+
 export default function CoursesContent() {
 
-    const [courses, setCourses] = useState<any[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [category, setCategory] = useState("ALL");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
 
-        async function loadCourses() {
-            const res = await fetch("/api/courses");
-            const data = await res.json();
-            console.log("COURSES:", data);   // 👈 check console
-            setCourses(data);
-        }
+        const fetchCourses = async () => {
+            try {
 
-        loadCourses();
+                const res = await fetch("/api/courses");
+
+                const data = await res.json();
+
+                setCourses(data);
+
+            } catch (error) {
+
+                console.error("Failed to fetch courses", error);
+
+            } finally {
+
+                setLoading(false);
+
+            }
+        };
+
+        fetchCourses();
 
     }, []);
 
-    if (!courses.length) {
-        return <div style={{ padding: 40 }}>No courses found</div>;
+    const filteredCourses = courses.filter((course) => {
+
+        if (category === "ALL") return true;
+
+        return course.category?.toLowerCase() === category.toLowerCase();
+
+    });
+
+    if (loading) {
+        return (
+            <div className="p-10 text-center">
+                Loading courses...
+            </div>
+        );
     }
 
     return (
-        <div className="p-10 grid grid-cols-3 gap-6">
 
-            {courses.map((course: any) => (
+        <div className="p-10">
 
-                <div
-                    key={course.id}
-                    className="border rounded-xl shadow hover:shadow-lg transition p-4"
-                >
+            <h1 className="text-3xl font-bold mb-6">Courses</h1>
 
-                    <img
-                        src={course.thumbnail}
-                        alt={course.title}
-                        className="w-full h-40 object-cover rounded"
-                    />
+            {/* CATEGORY BUTTONS */}
 
-                    <h2 className="font-bold mt-3">
-                        {course.title}
-                    </h2>
+            <div className="flex gap-3 mb-8 flex-wrap">
 
-                    <p className="text-gray-500 text-sm">
-                        {course.category}
-                    </p>
+                {["ALL", "Development", "Design", "Business", "Marketing", "Data Science"].map((cat) => (
 
-                    <p className="font-semibold mt-2 text-blue-600">
-                        ₹{course.price}
-                    </p>
+                    <button
+                        key={cat}
+                        onClick={() => setCategory(cat)}
+                        className={`px-4 py-2 rounded border ${category === cat ? "bg-blue-600 text-white" : "bg-white"
+                            }`}
+                    >
+                        {cat}
+                    </button>
+
+                ))}
+
+            </div>
+
+            {/* COURSES */}
+
+            {filteredCourses.length === 0 ? (
+
+                <div className="text-center text-gray-500">
+                    No courses found
+                </div>
+
+            ) : (
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                    {filteredCourses.map((course) => (
+
+                        <div
+                            key={course.id}
+                            className="border rounded-lg p-5 shadow-sm"
+                        >
+
+                            <h3 className="font-semibold text-lg">
+                                {course.title}
+                            </h3>
+
+                            <p className="text-gray-500">
+                                {course.category}
+                            </p>
+
+                            <p className="text-blue-600 font-bold mt-2">
+                                ₹{course.price}
+                            </p>
+
+                        </div>
+
+                    ))}
 
                 </div>
 
-            ))}
+            )}
 
         </div>
+
     );
 }

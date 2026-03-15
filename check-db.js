@@ -4,18 +4,19 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
-    const courseCount = await prisma.course.count();
-    console.log('Course Count:', courseCount);
     const courses = await prisma.course.findMany({
-      take: 5,
-      select: { id: true, title: true }
+      take: 1
     });
-    console.log('Sample Courses:', JSON.stringify(courses, null, 2));
-    
-    const userCount = await prisma.user.count();
-    console.log('User Count:', userCount);
+    if (courses.length > 0) {
+      console.log('KEYS:', Object.keys(courses[0]).join(', '));
+      console.log('TITLE:', courses[0].title);
+      console.log('IMAGE:', courses[0].image);
+      console.log('THUMBNAIL:', courses[0].thumbnail);
+    } else {
+      console.log('No courses found.');
+    }
   } catch (error) {
-    console.error('Error connecting to database:', error);
+    console.error('Error:', error);
   } finally {
     await prisma.$disconnect();
   }

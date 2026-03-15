@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  password      String
+  role          String       @default("STUDENT") // STUDENT, INSTRUCTOR, ADMIN
+  learningHours Float        @default(0.0)
+  streak        Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  courses       Course[]     @relation("InstructorCourses")
+  enrollments   Enrollment[]
+  cartItems     CartItem[]
+  certificates  Certificate[]
+}
+
+model Course {
+  id            String       @id @default(cuid())
+  title         String
+  description   String
+  price         Float        @default(0.0)
+  instructorId  String
+  instructor    User         @relation("InstructorCourses", fields: [instructorId], references: [id])
+  thumbnail     String?      // Image URL
+  previewVideo  String?      // Video URL
+  duration      String?      // e.g. "12h 30m"
+  rating        Float        @default(0.0)
+  reviews       Int          @default(0)
+  category      String?      // e.g. "Development", "Design"
+  students      Enrollment[]
+  cartItems     CartItem[]
+  certificates  Certificate[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  progress  Float    @default(0.0)
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+model Certificate {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  issuedAt  DateTime @default(now())
+  grade     String?  // e.g. "A+", "95/100"
+
+  @@unique([userId, courseId])
+}

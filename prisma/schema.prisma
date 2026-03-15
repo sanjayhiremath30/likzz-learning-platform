@@ -9,26 +9,27 @@ datasource db {
 }
 
 model User {
-  id    String  @id @default(cuid())
-  name  String?
-  email String  @unique
-  role  String  @default("STUDENT")
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  role      String   @default("STUDENT")
 
   courses   Course[]
   createdAt DateTime @default(now())
 }
 
 model Course {
-  id          String  @id @default(cuid())
-  title       String
-  description String?
-  category    String
-  price       Float
-  image       String?
-  duration    String?
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  category     String
+  price        Float
+  image        String?
+  duration     String?
+  previewVideo String?
 
   instructorId String?
-  instructor   User?   @relation(fields: [instructorId], references: [id])
+  instructor   User?    @relation(fields: [instructorId], references: [id])
 
-  createdAt DateTime @default(now())
+  createdAt    DateTime @default(now())
 }

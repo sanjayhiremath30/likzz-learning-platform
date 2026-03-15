@@ -1,213 +1,49 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Star, Clock, Users, Play, ShoppingCart, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { useCart } from "@/context/CartContext";
-
-interface CourseCardProps {
-    course: {
-        id: string;
-        title: string;
-        instructor: { name: string };
-        rating: number;
-        reviews: number;
-        price: number;
-        thumbnail: string;
-        previewVideo: string;
-        duration: string;
-        category: string;
-        isYoutubeCourse?: boolean;
-    };
+interface Course {
+    id: string;
+    title: string;
+    category: string;
+    price: number;
+    image?: string;
 }
 
-export default function CourseCard({ course }: CourseCardProps) {
-    const [isHovered, setIsHovered] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const [videoError, setVideoError] = useState(false);
-    const [isAdding, setIsAdding] = useState(false);
-    const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-    const { refreshCart } = useCart();
-
-    const getYoutubeId = (url: string) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
-    };
-
-    const videoId = course.isYoutubeCourse || course.previewVideo?.includes("youtube.com") || course.previewVideo?.includes("youtu.be")
-        ? getYoutubeId(course.previewVideo)
-        : null;
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (isHovered && !videoId) {
-            if (videoRef.current && !videoError) {
-                videoRef.current.play().catch(() => setVideoError(true));
-                timer = setTimeout(() => {
-                    if (videoRef.current) {
-                        videoRef.current.pause();
-                        videoRef.current.currentTime = 0;
-                    }
-                }, 8000);
-            }
-        } else if (!isHovered && videoRef.current) {
-            videoRef.current.pause();
-            videoRef.current.currentTime = 0;
-        }
-        return () => clearTimeout(timer);
-    }, [isHovered, videoError, videoId]);
-
-    const addToCart = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (isAdding) return;
-        setIsAdding(true);
-
-        try {
-            const res = await fetch("/api/cart", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ courseId: course.id })
-            });
-
-            if (res.ok) {
-                await refreshCart();
-            } else {
-                const data = await res.json();
-                if (data.error === "Unauthorized") {
-                    window.location.href = "/login";
-                }
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsAdding(false);
-        }
-    };
-
-    const [imgSrc, setImgSrc] = useState(course.thumbnail || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80`);
-
+export default function CourseCard({ course }: { course: Course }) {
     return (
-        <motion.div
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="group bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] overflow-hidden hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] transition-all duration-500 h-full flex flex-col"
-        >
-            <Link href={`/courses/${course.id}`} className="block relative h-52 overflow-hidden bg-gray-100">
-                <img
-                    src={imgSrc}
-                    alt={course.title}
-                    onError={() => setImgSrc(`https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80`)}
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${isHovered && videoId ? 'opacity-0' : 'opacity-100'}`}
-                />
+        <div className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
 
-                {isHovered && !videoId && !videoError && (
-                    <video
-                        ref={videoRef}
-                        src={course.previewVideo}
-                        muted
-                        playsInline
-                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isHovered ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`}
-                        onError={() => setVideoError(true)}
-                    />
-                )}
+            {/* Course Image */}
+            <img
+                src={course.image || "https://via.placeholder.com/400x200"}
+                alt={course.title}
+                className="w-full h-40 object-cover"
+            />
 
-                {isHovered && videoId && (
-                    <div className="absolute inset-0 w-full h-full">
-                        <iframe
-                            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}`}
-                            className="w-full h-full pointer-events-none"
-                            allow="autoplay; encrypted-media"
-                            allowFullScreen
-                        />
-                    </div>
-                )}
+            <div className="p-4">
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <h2 className="text-lg font-semibold">
+                    {course.title}
+                </h2>
 
-                <div className="absolute top-4 left-4">
-                    <span className="px-4 py-1.5 rounded-full bg-white/90 dark:bg-black/80 backdrop-blur-md text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20">
-                        {course.category}
+                <p className="text-gray-500 text-sm">
+                    {course.category}
+                </p>
+
+                <div className="flex justify-between items-center mt-4">
+
+                    <span className="text-blue-600 font-bold">
+                        ₹{course.price}
                     </span>
+
+                    <button
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    >
+                        Buy Course
+                    </button>
+
                 </div>
 
-                {course.isYoutubeCourse && (
-                    <div className="absolute top-4 right-4">
-                        <span className="px-4 py-1.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl border border-red-500/50">
-                            YouTube Course
-                        </span>
-                    </div>
-                )}
-
-                <AnimatePresence>
-                    {isHovered && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                        >
-                            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/30 shadow-2xl">
-                                <Play fill="white" size={28} />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </Link>
-
-            <div className="p-8 flex-1 flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-lg">
-                        <Star size={14} className="fill-amber-500 text-amber-500" />
-                        <span className="text-xs font-black text-amber-700 dark:text-amber-400">{course.rating.toFixed(1)}</span>
-                    </div>
-                    <span className="text-[10px] text-[var(--muted-foreground)] font-bold uppercase tracking-wider">({course.reviews} Verifications)</span>
-                </div>
-
-                <Link href={`/courses/${course.id}`}>
-                    <h3 className="font-black text-xl mb-3 leading-[1.2] tracking-tight group-hover:text-blue-600 transition-colors line-clamp-2 h-14">
-                        {course.title}
-                    </h3>
-                </Link>
-
-                <p className="text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-widest mb-6">by {course.instructor.name}</p>
-
-                <div className="flex items-center justify-between mt-auto pt-6 border-t border-[var(--border)]">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-[var(--muted-foreground)] uppercase tracking-[0.2em] mb-1">Pricing</span>
-                        <span className={`text-2xl font-black tracking-tighter ${course.isYoutubeCourse ? "text-blue-600" : ""}`}>${course.price}</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {course.isYoutubeCourse ? (
-                            <Link
-                                href={`/courses/${course.id}`}
-                                className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 active:scale-95"
-                            >
-                                Watch Course
-                            </Link>
-                        ) : (
-                            <button
-                                onClick={addToCart}
-                                disabled={isAdding}
-                                className={`p-4 rounded-2xl transition-all shadow-xl active:scale-90 flex items-center justify-center ${isAdding
-                                    ? "bg-[var(--muted)] text-[var(--muted-foreground)]"
-                                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20"
-                                    }`}
-                            >
-                                {isAdding ? <Loader2 className="animate-spin" size={20} /> : <ShoppingCart size={20} />}
-                            </button>
-                        )}
-                    </div>
-                </div>
             </div>
-        </motion.div>
+        </div>
     );
 }
-

@@ -6,7 +6,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     const category = searchParams.get("category");
-    const mentor = searchParams.get("mentor");   // 👈 NEW
+    const mentor = searchParams.get("mentor");
     const featured = searchParams.get("featured");
 
     try {
@@ -21,12 +21,18 @@ export async function GET(request: Request) {
         // Mentor filter
         if (mentor) {
             query.instructor = {
-                name: mentor.replace("-", " ")   // john-smith → john smith
+                name: mentor.replace("-", " ")
             };
         }
 
         const courses = await prisma.course.findMany({
-            where: query,
+            where: {
+                ...query,
+                OR: [
+                    { isYoutubeCourse: true },
+                    { isYoutubeCourse: false }
+                ]
+            },
             include: {
                 instructor: {
                     select: {

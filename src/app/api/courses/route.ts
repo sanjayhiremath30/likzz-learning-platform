@@ -13,26 +13,26 @@ export async function GET(request: Request) {
 
         const query: any = {};
 
-        // Category filter
-        if (category && category !== "All") {
-            query.category = category;
+        // CATEGORY FILTER (case-insensitive)
+        if (category && category !== "ALL") {
+            query.category = {
+                equals: category,
+                mode: "insensitive"
+            };
         }
 
-        // Mentor filter
+        // MENTOR FILTER
         if (mentor) {
             query.instructor = {
-                name: mentor.replace("-", " ")
+                name: {
+                    equals: mentor.replace("-", " "),
+                    mode: "insensitive"
+                }
             };
         }
 
         const courses = await prisma.course.findMany({
-            where: {
-                ...query,
-                OR: [
-                    { isYoutubeCourse: true },
-                    { isYoutubeCourse: false }
-                ]
-            },
+            where: query,
             include: {
                 instructor: {
                     select: {
@@ -41,7 +41,9 @@ export async function GET(request: Request) {
                 }
             },
             take: featured ? 4 : undefined,
-            orderBy: { createdAt: "desc" }
+            orderBy: {
+                createdAt: "desc"
+            }
         });
 
         return NextResponse.json(courses);
@@ -56,5 +58,4 @@ export async function GET(request: Request) {
         );
 
     }
-
 }
